@@ -1,0 +1,39 @@
+title: LocalServer
+description: Home server dashboard
+startUrl: http://192.168.1.29:3000/
+
+theme: dark
+color: zinc
+target: _blank
+
+quicklaunch:
+  searchDescriptions: true
+  hideInternetSearch: true
+
+statusStyle: "dot"
+showStats: false
+hideVersion: true
+disableIndexing: true
+headerStyle: clean
+fullWidth: true
+maxGroupColumns: 4
+useEqualHeights: true
+
+layout:
+  Server Resources:
+    style: row
+    columns: 4
+  Web Services:
+    style: row
+    columns: 4
+  Background Processes:
+    style: row
+    columns: 4
+  Dashboard Infrastructure:
+    style: row
+    columns: 3
+    initiallyCollapsed: true
+  System Services:
+    style: row
+    columns: 2
+    initiallyCollapsed: true

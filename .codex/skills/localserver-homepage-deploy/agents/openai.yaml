@@ -1,0 +1,4 @@
+interface:
+  display_name: "LocalServer Homepage Deploy"
+  short_description: "Deploy this Homepage dashboard to the home server"
+  default_prompt: "Use $localserver-homepage-deploy to deploy or verify the LocalServer Homepage dashboard."

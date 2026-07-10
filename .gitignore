@@ -1,0 +1,7 @@
+compose.env
+app.env
+
+.env
+.DS_Store
+Thumbs.db
+screenshots/

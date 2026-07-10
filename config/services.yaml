@@ -1,0 +1,84 @@
+---
+- Server Resources:
+    - CPU:
+        widget:
+          type: glances
+          url: http://192.168.1.29:61208
+          version: 4
+          metric: cpu
+          chart: false
+          refreshInterval: 5000
+
+    - Memory:
+        widget:
+          type: glances
+          url: http://192.168.1.29:61208
+          version: 4
+          metric: memory
+          chart: false
+          refreshInterval: 5000
+
+    - Root Disk:
+        widget:
+          type: glances
+          url: http://192.168.1.29:61208
+          version: 4
+          metric: fs:/etc/hosts
+          chart: false
+          refreshInterval: 10000
+
+    - Network:
+        widget:
+          type: glances
+          url: http://192.168.1.29:61208
+          version: 4
+          metric: network:eno1
+          chart: false
+          refreshInterval: 5000
+
+- Web Services:
+    - RPchat:
+        icon: mdi-chat-processing-outline
+        href: http://192.168.1.29:8001/
+        description: Web UI on :8001
+        siteMonitor: http://192.168.1.29:8001/
+        server: local-docker
+        container: rpchat-deepseek
+
+- Background Processes:
+    - Discord Bot:
+        icon: si-discord
+        description: Worker process
+        server: local-docker
+        container: my-server-discord-bot
+
+- Dashboard Infrastructure:
+    - Homepage:
+        icon: sh-homepage.svg
+        href: http://192.168.1.29:3000/
+        description: UI
+        siteMonitor: http://homepage:3000/
+        server: local-docker
+        container: localserver-homepage
+
+    - Metrics API:
+        icon: si-serverfault
+        description: Glances
+        siteMonitor: http://192.168.1.29:61208/
+        server: local-docker
+        container: localserver-homepage-glances
+
+    - Docker Proxy:
+        icon: si-docker
+        description: Read-only API
+        server: local-docker
+        container: localserver-homepage-dockerproxy
+
+- System Services:
+    - XTCG Backend:
+        icon: mdi-api
+        description: systemd service xtcg-backend.service on host port 8000
+
+    - XTCG Training Worker:
+        icon: mdi-cpu-64-bit
+        description: systemd service xtcg-training-worker.service

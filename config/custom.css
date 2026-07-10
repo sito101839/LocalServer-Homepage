@@ -1,0 +1,66 @@
+body {
+  letter-spacing: 0;
+  background: #09090b !important;
+}
+
+#__next,
+#page_wrapper,
+#inner_wrapper {
+  background: #09090b !important;
+}
+
+#information-widgets {
+  border-bottom: 0 !important;
+  margin-bottom: 0.25rem !important;
+  padding-bottom: 0.2rem !important;
+}
+
+#widgets-wrap {
+  align-items: center;
+  gap: 0.5rem 1rem;
+  justify-content: flex-start;
+}
+
+.information-widget-greeting span {
+  color: rgba(244, 244, 245, 0.92) !important;
+  font-weight: 650;
+  margin-right: 0 !important;
+}
+
+.information-widget-greeting.widget-container {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+.services-list .service {
+  border-radius: 6px;
+}
+
+.services-list .service,
+.service-card {
+  background: rgba(24, 24, 27, 0.58) !important;
+  border-color: rgba(161, 161, 170, 0.16) !important;
+  box-shadow: none !important;
+}
+
+.services-list .service:hover,
+.service-card:hover {
+  background: rgba(39, 39, 42, 0.72) !important;
+  border-color: rgba(212, 212, 216, 0.24) !important;
+}
+
+.service-card,
+.service-container {
+  letter-spacing: 0;
+}
+
+.service-stats {
+  display: none !important;
+}
+
+.service-card p,
+.service-container p {
+  color: rgba(212, 212, 216, 0.66) !important;
+}
