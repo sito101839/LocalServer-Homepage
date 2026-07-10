@@ -12,6 +12,21 @@ services:
       - /etc/os-release:/etc/os-release:ro
       - /sys:/sys:ro
 
+  deepseek-balance-api:
+    image: ${DEEPSEEK_BALANCE_API_IMAGE:-node:22-alpine}
+    container_name: localserver-homepage-deepseek-balance-api
+    restart: unless-stopped
+    env_file:
+      - app.env
+    environment:
+      PORT: "8787"
+      CACHE_TTL_MS: ${DEEPSEEK_BALANCE_CACHE_TTL_MS:-300000}
+    command: ["node", "/app/server.js"]
+    volumes:
+      - ./balance-api/server.js:/app/server.js:ro
+    networks:
+      - homepage
+
   dockerproxy:
     image: ${DOCKER_SOCKET_PROXY_IMAGE:-ghcr.io/tecnativa/docker-socket-proxy:latest}
     container_name: localserver-homepage-dockerproxy
@@ -33,6 +48,7 @@ services:
     depends_on:
       - dockerproxy
       - glances
+      - deepseek-balance-api
     env_file:
       - app.env
     environment:

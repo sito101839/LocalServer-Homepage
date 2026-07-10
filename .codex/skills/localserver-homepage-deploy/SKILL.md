@@ -7,7 +7,7 @@ description: Deploy, verify, update, or troubleshoot this repository's Homepage 
 
 ## Overview
 
-Use this skill for project-specific deployment and verification of the gethomepage.dev dashboard in this repository. The production service lives on the home server at `/srv/localserver-homepage` and is accessed at `http://192.168.1.29:3000/`.
+Use this skill for project-specific deployment and verification of the gethomepage.dev dashboard in this repository. The production service lives on the home server at `/srv/localserver-homepage` and is accessed at `http://192.168.1.29:3000/` or Tailscale URLs such as `http://shito-diginnos-pc.tail81aab6.ts.net:3000/`.
 
 Before touching the server, also obey the global `home-server-ssh` rules if available, especially the Docker Compose service standard and safety notes.
 
@@ -16,6 +16,7 @@ Before touching the server, also obey the global `home-server-ssh` rules if avai
 - Compose file: `compose.yml`
 - Compose settings sample: `compose.env.example`
 - App env sample: `app.env.example`
+- Internal DeepSeek balance API: `balance-api/server.js`
 - Homepage config: `config/*.yaml`
 - Local verification script: `scripts/verify.sh`
 - Deploy script: `scripts/deploy.sh`
@@ -53,6 +54,7 @@ Default deploy target:
 - SSH host: `shito@192.168.1.29`
 - Remote directory: `/srv/localserver-homepage`
 - Remote URL: `http://192.168.1.29:3000/`
+- Tailscale URL: `http://shito-diginnos-pc.tail81aab6.ts.net:3000/`
 
 Optional overrides:
 
@@ -66,6 +68,8 @@ This project also starts `localserver-homepage-glances` for host CPU, memory, di
 
 The root disk card intentionally uses `fs:/etc/hosts` because Glances reports that bind-mounted path on the host `/dev/sdb2` filesystem. Prefer this narrow mount-point target over mounting the whole host root into the Glances container.
 
+This project also starts `localserver-homepage-deepseek-balance-api`, an internal-only Node service that reads `DEEPSEEK_API_KEY` from server-side `app.env` and exposes sanitized balance data to Homepage at `http://deepseek-balance-api:8787/balance`. Never put the real DeepSeek API key in Homepage YAML.
+
 ## Verify Production
 
 Run these read-only checks after deploy:
@@ -77,6 +81,7 @@ ssh shito@192.168.1.29 curl --fail --silent --show-error --max-time 10 http://19
 ssh shito@192.168.1.29 docker inspect --format={{.HostConfig.RestartPolicy.Name}} localserver-homepage
 ssh shito@192.168.1.29 docker inspect --format={{.HostConfig.RestartPolicy.Name}} localserver-homepage-dockerproxy
 ssh shito@192.168.1.29 docker inspect --format={{.HostConfig.RestartPolicy.Name}} localserver-homepage-glances
+ssh shito@192.168.1.29 docker inspect --format={{.HostConfig.RestartPolicy.Name}} localserver-homepage-deepseek-balance-api
 ```
 
 Expected state:
@@ -84,7 +89,8 @@ Expected state:
 - `localserver-homepage`: `Up`, `healthy`, `0.0.0.0:3000->3000/tcp`
 - `localserver-homepage-dockerproxy`: `Up`
 - `localserver-homepage-glances`: `Up`, host network, serving on `http://192.168.1.29:61208/`
-- restart policy for all three containers: `unless-stopped`
+- `localserver-homepage-deepseek-balance-api`: `Up`, internal-only, serving on Docker network port `8787`
+- restart policy for all containers: `unless-stopped`
 
 Verify Homepage config APIs:
 
@@ -93,11 +99,19 @@ ssh shito@192.168.1.29 curl --fail --silent --show-error --max-time 10 http://19
 ssh shito@192.168.1.29 curl --fail --silent --show-error --max-time 10 http://192.168.1.29:3000/api/widgets
 ```
 
+Verify Tailscale access from the server without depending on external DNS:
+
+```bash
+ssh shito@192.168.1.29 curl --fail --silent --show-error --max-time 10 --resolve shito-diginnos-pc.tail81aab6.ts.net:3000:100.76.107.23 http://shito-diginnos-pc.tail81aab6.ts.net:3000/ >/dev/null
+ssh shito@192.168.1.29 curl --fail --silent --show-error --max-time 10 http://100.76.107.23:3000/ >/dev/null
+```
+
 Verify Docker integration with the path order `<container>/<server>`:
 
 ```bash
 ssh shito@192.168.1.29 curl --fail --silent --show-error --max-time 10 http://192.168.1.29:3000/api/docker/status/localserver-homepage/local-docker
 ssh shito@192.168.1.29 curl --fail --silent --show-error --max-time 10 http://192.168.1.29:3000/api/docker/status/localserver-homepage-glances/local-docker
+ssh shito@192.168.1.29 curl --fail --silent --show-error --max-time 10 http://192.168.1.29:3000/api/docker/status/localserver-homepage-deepseek-balance-api/local-docker
 ssh shito@192.168.1.29 curl --fail --silent --show-error --max-time 10 http://192.168.1.29:3000/api/docker/status/rpchat-deepseek/local-docker
 ssh shito@192.168.1.29 curl --fail --silent --show-error --max-time 10 http://192.168.1.29:3000/api/docker/status/my-server-discord-bot/local-docker
 ```
@@ -106,8 +120,15 @@ Expected status examples:
 
 - `{"status":"running","health":"healthy"}` for `localserver-homepage`
 - `{"status":"running"}` or `{"status":"running","health":"..."}` for `localserver-homepage-glances`
+- `{"status":"running"}` for `localserver-homepage-deepseek-balance-api`
 - `{"status":"running","health":"healthy"}` for `rpchat-deepseek`
 - `{"status":"running"}` for `my-server-discord-bot`
+
+Verify DeepSeek balance API from inside the Homepage Docker network without printing secrets:
+
+```bash
+ssh shito@192.168.1.29 docker exec localserver-homepage node -e "fetch('http://deepseek-balance-api:8787/balance').then(async r => { const j = await r.json(); console.log(r.status, j.service, j.currency, j.is_available); })"
+```
 
 ## Troubleshooting
 
@@ -117,7 +138,7 @@ Check logs:
 ssh shito@192.168.1.29 docker compose --env-file /srv/localserver-homepage/compose.env -f /srv/localserver-homepage/compose.yml logs --tail=100
 ```
 
-If `HOMEPAGE_ALLOWED_HOSTS` errors appear, edit server-side `/srv/localserver-homepage/app.env` so it includes the exact browser host and port, then redeploy or restart.
+If `HOMEPAGE_ALLOWED_HOSTS` errors appear, edit server-side `/srv/localserver-homepage/app.env` so it includes the exact browser host and port, then redeploy or restart. Current known allowed hosts should include `192.168.1.29:3000`, `100.76.107.23:3000`, `shito-diginnos-pc:3000`, `shito-diginnos-pc.tail81aab6.ts.net:3000`, `desktop-n4jnor6:3000`, and `desktop-n4jnor6.tail81aab6.ts.net:3000`.
 
 If a Docker status API returns 500, first confirm the URL order is `/api/docker/status/<container>/<server>`. The inverse order can log `Cannot read properties of null (reading 'conn')`.
 

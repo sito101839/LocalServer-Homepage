@@ -23,6 +23,9 @@ layout:
   Server Resources:
     style: row
     columns: 4
+  API Balances:
+    style: row
+    columns: 4
   Web Services:
     style: row
     columns: 4

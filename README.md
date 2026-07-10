@@ -6,12 +6,14 @@ This project uses [Homepage](https://gethomepage.dev/) with Docker Compose. The 
 
 ## What This Starts
 
-- `localserver-homepage`: Homepage UI on `http://192.168.1.29:3000/`
+- `localserver-homepage`: Homepage UI on `http://192.168.1.29:3000/` and Tailscale hosts such as `http://shito-diginnos-pc.tail81aab6.ts.net:3000/`
 - `localserver-homepage-dockerproxy`: read-only Docker socket proxy used by Homepage for container status
 - `localserver-homepage-glances`: Glances host metrics API on `http://192.168.1.29:61208/`, used by Homepage for CPU, memory, disk, and network widgets
+- `localserver-homepage-deepseek-balance-api`: internal-only proxy for DeepSeek API balance shown in Homepage
 
 Glances uses host networking and a read-only `/sys` mount so it can read host network-interface statistics where supported.
 The root disk widget uses Glances' `/etc/hosts` filesystem entry, which maps to the host `/dev/sdb2` root filesystem without mounting the whole host root into the container.
+DeepSeek balance uses the server-side `DEEPSEEK_API_KEY` in `app.env`; do not put this key directly in Homepage YAML config.
 
 The initial dashboard tracks these existing containers:
 
@@ -20,6 +22,7 @@ The initial dashboard tracks these existing containers:
 - `localserver-homepage`
 - `localserver-homepage-dockerproxy`
 - `localserver-homepage-glances`
+- `localserver-homepage-deepseek-balance-api`
 
 Systemd services such as `xtcg-backend.service` and `xtcg-training-worker.service` are listed as reference cards only. Add a dedicated exporter or service health endpoint before treating them as monitored.
 
@@ -75,5 +78,13 @@ Do not commit real `compose.env` or `app.env` files. Edit the server-side files 
 `HOMEPAGE_ALLOWED_HOSTS` must include the exact host and port used in the browser, for example:
 
 ```dotenv
-HOMEPAGE_ALLOWED_HOSTS=192.168.1.29:3000,localhost:3000,127.0.0.1:3000
+HOMEPAGE_ALLOWED_HOSTS=192.168.1.29:3000,localhost:3000,127.0.0.1:3000,100.76.107.23:3000,shito-diginnos-pc:3000,shito-diginnos-pc.tail81aab6.ts.net:3000,desktop-n4jnor6:3000,desktop-n4jnor6.tail81aab6.ts.net:3000
+```
+
+The home server currently advertises itself on Tailscale as `shito-diginnos-pc` with IP `100.76.107.23`. `desktop-n4jnor6` is also allowed because it may appear in browser Host headers when accessing through the desktop-side Tailscale path.
+
+`DEEPSEEK_API_KEY` is required only for the internal balance API:
+
+```dotenv
+DEEPSEEK_API_KEY=your-deepseek-api-key
 ```

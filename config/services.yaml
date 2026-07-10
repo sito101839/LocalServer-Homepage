@@ -36,6 +36,33 @@
           chart: false
           refreshInterval: 5000
 
+- API Balances:
+    - DeepSeek:
+        icon: mdi-wallet-outline
+        description: API credit
+        widget:
+          type: customapi
+          url: http://deepseek-balance-api:8787/balance
+          refreshInterval: 600000
+          display: list
+          mappings:
+            - field: total_balance
+              label: Balance
+              format: float
+              prefix: "$"
+              additionalField:
+                field: currency
+                color: theme
+                format: text
+            - field: is_available
+              label: Status
+              format: text
+              remap:
+                - value: true
+                  to: Available
+                - value: false
+                  to: Unavailable
+
 - Web Services:
     - RPchat:
         icon: mdi-chat-processing-outline
