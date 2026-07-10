@@ -27,6 +27,31 @@
           chart: false
           refreshInterval: 10000
 
+    - GPU:
+        widget:
+          type: customapi
+          url: http://gpu-status-api:8788/gpu
+          refreshInterval: 5000
+          display: list
+          mappings:
+            - field: utilization_gpu
+              label: Load
+              format: float
+              suffix: "%"
+            - field: memory_used
+              label: Memory
+              format: float
+              suffix: " MiB"
+              additionalField:
+                field: memory_total
+                color: theme
+                format: float
+                suffix: " MiB"
+            - field: temperature
+              label: Temp
+              format: float
+              suffix: " C"
+
     - Network:
         widget:
           type: glances
@@ -64,6 +89,14 @@
                   to: Unavailable
 
 - Web Services:
+    - XTCG Web:
+        icon: mdi-cards-playing-outline
+        href: http://192.168.1.29/
+        description: Web UI on :80
+        siteMonitor: http://192.168.1.29/
+        server: local-docker
+        container: xtcg-web
+
     - RPchat:
         icon: mdi-chat-processing-outline
         href: http://192.168.1.29:8001/
@@ -73,6 +106,18 @@
         container: rpchat-deepseek
 
 - Background Processes:
+    - XTCG Backend API:
+        icon: mdi-api
+        description: Backend container
+        server: local-docker
+        container: xtcg-api
+
+    - XTCG Training Worker:
+        icon: mdi-cpu-64-bit
+        description: GPU training worker
+        server: local-docker
+        container: xtcg-worker
+
     - Discord Bot:
         icon: si-discord
         description: Worker process
@@ -100,12 +145,3 @@
         description: Read-only API
         server: local-docker
         container: localserver-homepage-dockerproxy
-
-- System Services:
-    - XTCG Backend:
-        icon: mdi-api
-        description: systemd service xtcg-backend.service on host port 8000
-
-    - XTCG Training Worker:
-        icon: mdi-cpu-64-bit
-        description: systemd service xtcg-training-worker.service

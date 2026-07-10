@@ -12,6 +12,20 @@ services:
       - /etc/os-release:/etc/os-release:ro
       - /sys:/sys:ro
 
+  gpu-status-api:
+    image: ${GPU_STATUS_API_IMAGE:-node:22-bookworm-slim}
+    container_name: localserver-homepage-gpu-status-api
+    restart: unless-stopped
+    gpus: all
+    environment:
+      PORT: "8788"
+      CACHE_TTL_MS: ${GPU_STATUS_CACHE_TTL_MS:-5000}
+    command: ["node", "/app/server.js"]
+    volumes:
+      - ./gpu-api/server.js:/app/server.js:ro
+    networks:
+      - homepage
+
   deepseek-balance-api:
     image: ${DEEPSEEK_BALANCE_API_IMAGE:-node:22-alpine}
     container_name: localserver-homepage-deepseek-balance-api
@@ -48,6 +62,7 @@ services:
     depends_on:
       - dockerproxy
       - glances
+      - gpu-status-api
       - deepseek-balance-api
     env_file:
       - app.env

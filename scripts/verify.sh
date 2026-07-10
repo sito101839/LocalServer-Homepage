@@ -14,6 +14,7 @@ cp "$ROOT_DIR/compose.env.example" "$TMP_DIR/compose.env"
 cp "$ROOT_DIR/app.env.example" "$TMP_DIR/app.env"
 cp -R "$ROOT_DIR/config" "$TMP_DIR/config"
 cp -R "$ROOT_DIR/balance-api" "$TMP_DIR/balance-api"
+cp -R "$ROOT_DIR/gpu-api" "$TMP_DIR/gpu-api"
 
 docker compose --env-file "$TMP_DIR/compose.env" -f "$TMP_DIR/compose.yml" config --quiet
 

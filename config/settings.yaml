@@ -16,13 +16,13 @@ hideVersion: true
 disableIndexing: true
 headerStyle: clean
 fullWidth: true
-maxGroupColumns: 4
+maxGroupColumns: 5
 useEqualHeights: true
 
 layout:
   Server Resources:
     style: row
-    columns: 4
+    columns: 5
   API Balances:
     style: row
     columns: 4
@@ -35,8 +35,4 @@ layout:
   Dashboard Infrastructure:
     style: row
     columns: 3
-    initiallyCollapsed: true
-  System Services:
-    style: row
-    columns: 2
     initiallyCollapsed: true

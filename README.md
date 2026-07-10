@@ -9,22 +9,28 @@ This project uses [Homepage](https://gethomepage.dev/) with Docker Compose. The 
 - `localserver-homepage`: Homepage UI on `http://192.168.1.29:3000/` and Tailscale hosts such as `http://shito-diginnos-pc.tail81aab6.ts.net:3000/`
 - `localserver-homepage-dockerproxy`: read-only Docker socket proxy used by Homepage for container status
 - `localserver-homepage-glances`: Glances host metrics API on `http://192.168.1.29:61208/`, used by Homepage for CPU, memory, disk, and network widgets
+- `localserver-homepage-gpu-status-api`: internal-only GPU status API backed by `nvidia-smi`
 - `localserver-homepage-deepseek-balance-api`: internal-only proxy for DeepSeek API balance shown in Homepage
 
 Glances uses host networking and a read-only `/sys` mount so it can read host network-interface statistics where supported.
+GPU status uses a small internal Node service with NVIDIA GPU access; it is not exposed on a host port.
 The root disk widget uses Glances' `/etc/hosts` filesystem entry, which maps to the host `/dev/sdb2` root filesystem without mounting the whole host root into the container.
 DeepSeek balance uses the server-side `DEEPSEEK_API_KEY` in `app.env`; do not put this key directly in Homepage YAML config.
 
 The initial dashboard tracks these existing containers:
 
+- `xtcg-web`
+- `xtcg-api`
+- `xtcg-worker`
 - `rpchat-deepseek`
 - `my-server-discord-bot`
 - `localserver-homepage`
 - `localserver-homepage-dockerproxy`
 - `localserver-homepage-glances`
+- `localserver-homepage-gpu-status-api`
 - `localserver-homepage-deepseek-balance-api`
 
-Systemd services such as `xtcg-backend.service` and `xtcg-training-worker.service` are listed as reference cards only. Add a dedicated exporter or service health endpoint before treating them as monitored.
+XTCG services are tracked as Docker containers. The old `xtcg-backend.service` and `xtcg-training-worker.service` systemd units are expected to be inactive after Docker migration.
 
 ## Local Check
 

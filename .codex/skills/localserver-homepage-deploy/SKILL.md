@@ -17,6 +17,7 @@ Before touching the server, also obey the global `home-server-ssh` rules if avai
 - Compose settings sample: `compose.env.example`
 - App env sample: `app.env.example`
 - Internal DeepSeek balance API: `balance-api/server.js`
+- Internal GPU status API: `gpu-api/server.js`
 - Homepage config: `config/*.yaml`
 - Local verification script: `scripts/verify.sh`
 - Deploy script: `scripts/deploy.sh`
@@ -66,6 +67,8 @@ The deploy script creates `/srv/localserver-homepage` with `sudo` on first deplo
 
 This project also starts `localserver-homepage-glances` for host CPU, memory, disk, uptime, and network metrics. It uses host networking plus a read-only `/sys` mount for host interface visibility; only add broader container privileges after explicit user approval.
 
+This project also starts `localserver-homepage-gpu-status-api`, an internal-only Node service that runs `nvidia-smi` with NVIDIA GPU access and exposes sanitized GPU data to Homepage at `http://gpu-status-api:8788/gpu`.
+
 The root disk card intentionally uses `fs:/etc/hosts` because Glances reports that bind-mounted path on the host `/dev/sdb2` filesystem. Prefer this narrow mount-point target over mounting the whole host root into the Glances container.
 
 This project also starts `localserver-homepage-deepseek-balance-api`, an internal-only Node service that reads `DEEPSEEK_API_KEY` from server-side `app.env` and exposes sanitized balance data to Homepage at `http://deepseek-balance-api:8787/balance`. Never put the real DeepSeek API key in Homepage YAML.
@@ -81,6 +84,7 @@ ssh shito@192.168.1.29 curl --fail --silent --show-error --max-time 10 http://19
 ssh shito@192.168.1.29 docker inspect --format={{.HostConfig.RestartPolicy.Name}} localserver-homepage
 ssh shito@192.168.1.29 docker inspect --format={{.HostConfig.RestartPolicy.Name}} localserver-homepage-dockerproxy
 ssh shito@192.168.1.29 docker inspect --format={{.HostConfig.RestartPolicy.Name}} localserver-homepage-glances
+ssh shito@192.168.1.29 docker inspect --format={{.HostConfig.RestartPolicy.Name}} localserver-homepage-gpu-status-api
 ssh shito@192.168.1.29 docker inspect --format={{.HostConfig.RestartPolicy.Name}} localserver-homepage-deepseek-balance-api
 ```
 
@@ -89,6 +93,7 @@ Expected state:
 - `localserver-homepage`: `Up`, `healthy`, `0.0.0.0:3000->3000/tcp`
 - `localserver-homepage-dockerproxy`: `Up`
 - `localserver-homepage-glances`: `Up`, host network, serving on `http://192.168.1.29:61208/`
+- `localserver-homepage-gpu-status-api`: `Up`, internal-only, serving on Docker network port `8788`
 - `localserver-homepage-deepseek-balance-api`: `Up`, internal-only, serving on Docker network port `8787`
 - restart policy for all containers: `unless-stopped`
 
@@ -97,6 +102,12 @@ Verify Homepage config APIs:
 ```bash
 ssh shito@192.168.1.29 curl --fail --silent --show-error --max-time 10 http://192.168.1.29:3000/api/services
 ssh shito@192.168.1.29 curl --fail --silent --show-error --max-time 10 http://192.168.1.29:3000/api/widgets
+```
+
+Verify GPU status from inside the Homepage Docker network:
+
+```bash
+ssh shito@192.168.1.29 docker exec localserver-homepage node -e "fetch('http://gpu-status-api:8788/gpu').then(async r => { const j = await r.json(); console.log(r.status, j.name, j.utilization_gpu, j.memory_used, j.memory_total, j.temperature); })"
 ```
 
 Verify Tailscale access from the server without depending on external DNS:
@@ -111,7 +122,11 @@ Verify Docker integration with the path order `<container>/<server>`:
 ```bash
 ssh shito@192.168.1.29 curl --fail --silent --show-error --max-time 10 http://192.168.1.29:3000/api/docker/status/localserver-homepage/local-docker
 ssh shito@192.168.1.29 curl --fail --silent --show-error --max-time 10 http://192.168.1.29:3000/api/docker/status/localserver-homepage-glances/local-docker
+ssh shito@192.168.1.29 curl --fail --silent --show-error --max-time 10 http://192.168.1.29:3000/api/docker/status/localserver-homepage-gpu-status-api/local-docker
 ssh shito@192.168.1.29 curl --fail --silent --show-error --max-time 10 http://192.168.1.29:3000/api/docker/status/localserver-homepage-deepseek-balance-api/local-docker
+ssh shito@192.168.1.29 curl --fail --silent --show-error --max-time 10 http://192.168.1.29:3000/api/docker/status/xtcg-web/local-docker
+ssh shito@192.168.1.29 curl --fail --silent --show-error --max-time 10 http://192.168.1.29:3000/api/docker/status/xtcg-api/local-docker
+ssh shito@192.168.1.29 curl --fail --silent --show-error --max-time 10 http://192.168.1.29:3000/api/docker/status/xtcg-worker/local-docker
 ssh shito@192.168.1.29 curl --fail --silent --show-error --max-time 10 http://192.168.1.29:3000/api/docker/status/rpchat-deepseek/local-docker
 ssh shito@192.168.1.29 curl --fail --silent --show-error --max-time 10 http://192.168.1.29:3000/api/docker/status/my-server-discord-bot/local-docker
 ```
@@ -120,7 +135,11 @@ Expected status examples:
 
 - `{"status":"running","health":"healthy"}` for `localserver-homepage`
 - `{"status":"running"}` or `{"status":"running","health":"..."}` for `localserver-homepage-glances`
+- `{"status":"running"}` for `localserver-homepage-gpu-status-api`
 - `{"status":"running"}` for `localserver-homepage-deepseek-balance-api`
+- `{"status":"running","health":"healthy"}` for `xtcg-web`
+- `{"status":"running","health":"healthy"}` for `xtcg-api`
+- `{"status":"running","health":"healthy"}` for `xtcg-worker`
 - `{"status":"running","health":"healthy"}` for `rpchat-deepseek`
 - `{"status":"running"}` for `my-server-discord-bot`
 
@@ -142,4 +161,4 @@ If `HOMEPAGE_ALLOWED_HOSTS` errors appear, edit server-side `/srv/localserver-ho
 
 If a Docker status API returns 500, first confirm the URL order is `/api/docker/status/<container>/<server>`. The inverse order can log `Cannot read properties of null (reading 'conn')`.
 
-Do not stop or reuse port `8000`; it is reserved for `xtcg-backend.service`. Existing services `rpchat-deepseek` on `8001` and `my-server-discord-bot` should not be modified by this project deploy.
+XTCG is expected to run from `/srv/xtcg-engine` as Docker containers `xtcg-web`, `xtcg-api`, and `xtcg-worker`; the old `xtcg-backend.service` and `xtcg-training-worker.service` units should normally be inactive after migration. Existing services `rpchat-deepseek` on `8001` and `my-server-discord-bot` should not be modified by this project deploy.
