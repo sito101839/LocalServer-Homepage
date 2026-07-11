@@ -9,6 +9,8 @@ This project uses [Homepage](https://gethomepage.dev/) with Docker Compose. The 
 - `localserver-homepage`: Homepage UI on `http://192.168.1.29:3000/` and Tailscale hosts such as `http://shito-diginnos-pc.tail81aab6.ts.net:3000/`
 - `localserver-homepage-dockerproxy`: read-only Docker socket proxy used by Homepage for container status
 - `localserver-homepage-glances`: Glances host metrics API on `http://192.168.1.29:61208/`, used by Homepage for CPU, memory, disk, and network widgets
+
+Web service links follow the route used to open Homepage: a dashboard opened through the LAN IP links to LAN service URLs, while a dashboard opened through a Tailscale IP or MagicDNS name links to that same Tailscale host. Monitoring URLs remain internal and fixed.
 - `localserver-homepage-gpu-status-api`: internal-only GPU status API backed by `nvidia-smi`
 - `localserver-homepage-deepseek-balance-api`: internal-only proxy for DeepSeek API balance shown in Homepage
 

@@ -19,6 +19,7 @@ Before touching the server, also obey the global `home-server-ssh` rules if avai
 - Internal DeepSeek balance API: `balance-api/server.js`
 - Internal GPU status API: `gpu-api/server.js`
 - Homepage config: `config/*.yaml`
+- Browser-side route-aware service links: `config/custom.js`
 - Local verification script: `scripts/verify.sh`
 - Deploy script: `scripts/deploy.sh`
 
