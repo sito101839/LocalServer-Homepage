@@ -18,6 +18,7 @@ Before touching the server, also obey the global `home-server-ssh` rules if avai
 - App env sample: `app.env.example`
 - Internal DeepSeek balance API: `balance-api/server.js`
 - Internal GPU status API: `gpu-api/server.js`
+- Internal XTCG Runtime API: `xtcg-runtime-api/server.js`
 - Homepage config: `config/*.yaml`
 - Browser-side route-aware service links: `config/custom.js`
 - Local verification script: `scripts/verify.sh`
@@ -74,6 +75,8 @@ The root disk card intentionally uses `fs:/etc/hosts` because Glances reports th
 
 This project also starts `localserver-homepage-deepseek-balance-api`, an internal-only Node service that reads `DEEPSEEK_API_KEY` from server-side `app.env` and exposes sanitized balance data to Homepage at `http://deepseek-balance-api:8787/balance`. Never put the real DeepSeek API key in Homepage YAML.
 
+This project also starts `localserver-homepage-xtcg-runtime-api`, an internal-only Node service that joins the existing `xtcg-engine_default` Docker network to read `xtcg-api` Runtime Status and expose sanitized card data to Homepage at `http://xtcg-runtime-api:8789/`. The XTCG API remains private and is not given a host port.
+
 ## Verify Production
 
 Run these read-only checks after deploy:
@@ -87,6 +90,7 @@ ssh shito@192.168.1.29 docker inspect --format={{.HostConfig.RestartPolicy.Name}
 ssh shito@192.168.1.29 docker inspect --format={{.HostConfig.RestartPolicy.Name}} localserver-homepage-glances
 ssh shito@192.168.1.29 docker inspect --format={{.HostConfig.RestartPolicy.Name}} localserver-homepage-gpu-status-api
 ssh shito@192.168.1.29 docker inspect --format={{.HostConfig.RestartPolicy.Name}} localserver-homepage-deepseek-balance-api
+ssh shito@192.168.1.29 docker inspect --format={{.HostConfig.RestartPolicy.Name}} localserver-homepage-xtcg-runtime-api
 ```
 
 Expected state:
@@ -96,6 +100,7 @@ Expected state:
 - `localserver-homepage-glances`: `Up`, host network, serving on `http://192.168.1.29:61208/`
 - `localserver-homepage-gpu-status-api`: `Up`, internal-only, serving on Docker network port `8788`
 - `localserver-homepage-deepseek-balance-api`: `Up`, internal-only, serving on Docker network port `8787`
+- `localserver-homepage-xtcg-runtime-api`: `Up`, internal-only, serving on Docker network port `8789`
 - restart policy for all containers: `unless-stopped`
 
 Verify Homepage config APIs:
@@ -148,6 +153,13 @@ Verify DeepSeek balance API from inside the Homepage Docker network without prin
 
 ```bash
 ssh shito@192.168.1.29 docker exec localserver-homepage node -e "fetch('http://deepseek-balance-api:8787/balance').then(async r => { const j = await r.json(); console.log(r.status, j.service, j.currency, j.is_available); })"
+```
+
+Verify XTCG Runtime data from inside the Homepage Docker network:
+
+```bash
+ssh shito@192.168.1.29 docker exec localserver-homepage node -e "fetch('http://xtcg-runtime-api:8789/runtime').then(async r => { const j = await r.json(); console.log(r.status, j.status, j.worker_label, j.queue_label); })"
+ssh shito@192.168.1.29 docker exec localserver-homepage node -e "fetch('http://xtcg-runtime-api:8789/current-work').then(async r => { const j = await r.json(); console.log(r.status, j.work_label, j.current_label, j.batch_label); })"
 ```
 
 ## Troubleshooting

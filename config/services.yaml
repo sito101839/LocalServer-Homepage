@@ -124,6 +124,63 @@
         server: local-docker
         container: my-server-discord-bot
 
+- XTCG Operations:
+    - Current Work:
+        icon: mdi-clipboard-text-clock-outline
+        description: Jobs and submitted batches
+        widget:
+          type: customapi
+          url: http://xtcg-runtime-api:8789/current-work
+          refreshInterval: 5000
+          display: list
+          mappings:
+            - field: work_label
+              label: Workload
+              format: text
+            - field: current_label
+              label: Current
+              format: text
+            - field: next_label
+              label: Next
+              format: text
+            - field: batch_label
+              label: Batch
+              format: text
+
+    - Runtime:
+        icon: mdi-engine-outline
+        description: Worker and execution status
+        widget:
+          type: customapi
+          url: http://xtcg-runtime-api:8789/runtime
+          refreshInterval: 5000
+          display: list
+          mappings:
+            - field: status
+              label: State
+              format: text
+              remap:
+                - value: idle
+                  to: Idle
+                - value: busy
+                  to: Busy
+                - value: degraded
+                  to: Degraded
+                - value: unavailable
+                  to: Unavailable
+            - field: worker_label
+              label: Worker
+              format: text
+            - field: executor_label
+              label: Executor
+              format: text
+            - field: queue_label
+              label: Queue
+              format: text
+            - field: failure_label
+              label: Recent failures
+              format: text
+
 - Dashboard Infrastructure:
     - Homepage:
         icon: sh-homepage.svg

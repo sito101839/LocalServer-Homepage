@@ -32,6 +32,9 @@ layout:
   Background Processes:
     style: row
     columns: 4
+  XTCG Operations:
+    style: row
+    columns: 2
   Dashboard Infrastructure:
     style: row
     columns: 3

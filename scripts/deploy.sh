@@ -7,6 +7,7 @@ REMOTE_HOST="${REMOTE_HOST:-shito@192.168.1.29}"
 REMOTE_DIR="${REMOTE_DIR:-/srv/localserver-homepage}"
 REMOTE_URL="${REMOTE_URL:-http://192.168.1.29:3000/}"
 GLANCES_URL="${GLANCES_URL:-http://192.168.1.29:61208/}"
+XTCG_DOCKER_NETWORK="${XTCG_DOCKER_NETWORK:-xtcg-engine_default}"
 
 echo "Deploy target: ${REMOTE_HOST}:${REMOTE_DIR}"
 
@@ -16,7 +17,8 @@ wait_for_url() {
 }
 
 ssh "$REMOTE_HOST" "if [ ! -d '${REMOTE_DIR}' ]; then sudo mkdir -p '${REMOTE_DIR}' && sudo chown shito:shito '${REMOTE_DIR}'; fi"
-ssh "$REMOTE_HOST" "mkdir -p '${REMOTE_DIR}/config' '${REMOTE_DIR}/balance-api' '${REMOTE_DIR}/gpu-api' '${REMOTE_DIR}/backups'"
+ssh "$REMOTE_HOST" "mkdir -p '${REMOTE_DIR}/config' '${REMOTE_DIR}/balance-api' '${REMOTE_DIR}/gpu-api' '${REMOTE_DIR}/xtcg-runtime-api' '${REMOTE_DIR}/backups'"
+ssh "$REMOTE_HOST" "docker network inspect '${XTCG_DOCKER_NETWORK}' >/dev/null"
 
 ssh "$REMOTE_HOST" "if [ -d '${REMOTE_DIR}/config' ]; then tar -czf '${REMOTE_DIR}/backups/config-\$(date +%Y%m%d-%H%M%S).tgz' -C '${REMOTE_DIR}' config compose.yml compose.env app.env 2>/dev/null || true; fi"
 
@@ -24,6 +26,7 @@ rsync -az "$ROOT_DIR/compose.yml" "$ROOT_DIR/compose.env.example" "$ROOT_DIR/app
 rsync -az "$ROOT_DIR/config/" "$REMOTE_HOST:${REMOTE_DIR}/config/"
 rsync -az "$ROOT_DIR/balance-api/" "$REMOTE_HOST:${REMOTE_DIR}/balance-api/"
 rsync -az "$ROOT_DIR/gpu-api/" "$REMOTE_HOST:${REMOTE_DIR}/gpu-api/"
+rsync -az "$ROOT_DIR/xtcg-runtime-api/" "$REMOTE_HOST:${REMOTE_DIR}/xtcg-runtime-api/"
 
 ssh "$REMOTE_HOST" "cd '${REMOTE_DIR}' && [ -f compose.env ] || cp compose.env.example compose.env"
 ssh "$REMOTE_HOST" "cd '${REMOTE_DIR}' && [ -f app.env ] || cp app.env.example app.env"
