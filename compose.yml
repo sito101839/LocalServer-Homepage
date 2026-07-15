@@ -41,6 +41,21 @@ services:
     networks:
       - homepage
 
+  openai-cost-api:
+    image: ${OPENAI_COST_API_IMAGE:-node:22-alpine}
+    container_name: localserver-homepage-openai-cost-api
+    restart: unless-stopped
+    env_file:
+      - app.env
+    environment:
+      PORT: "8790"
+      CACHE_TTL_MS: ${OPENAI_COST_CACHE_TTL_MS:-600000}
+    command: ["node", "/app/server.js"]
+    volumes:
+      - ./openai-cost-api/server.js:/app/server.js:ro
+    networks:
+      - homepage
+
   xtcg-runtime-api:
     image: ${XTCG_RUNTIME_API_IMAGE:-node:22-alpine}
     container_name: localserver-homepage-xtcg-runtime-api
@@ -79,6 +94,7 @@ services:
       - glances
       - gpu-status-api
       - deepseek-balance-api
+      - openai-cost-api
       - xtcg-runtime-api
     env_file:
       - app.env

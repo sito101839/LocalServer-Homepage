@@ -17,6 +17,7 @@ Before touching the server, also obey the global `home-server-ssh` rules if avai
 - Compose settings sample: `compose.env.example`
 - App env sample: `app.env.example`
 - Internal DeepSeek balance API: `balance-api/server.js`
+- Internal OpenAI costs API: `openai-cost-api/server.js`
 - Internal GPU status API: `gpu-api/server.js`
 - Internal XTCG Runtime API: `xtcg-runtime-api/server.js`
 - Homepage config: `config/*.yaml`
@@ -75,6 +76,8 @@ The root disk card intentionally uses `fs:/etc/hosts` because Glances reports th
 
 This project also starts `localserver-homepage-deepseek-balance-api`, an internal-only Node service that reads `DEEPSEEK_API_KEY` from server-side `app.env` and exposes sanitized balance data to Homepage at `http://deepseek-balance-api:8787/balance`. Never put the real DeepSeek API key in Homepage YAML.
 
+This project also starts `localserver-homepage-openai-cost-api`, an internal-only Node service that reads an organization Admin API Key from `OPENAI_ADMIN_KEY` in server-side `app.env` and exposes sanitized month-to-date cost data at `http://openai-cost-api:8790/costs`. OpenAI does not expose a supported prepaid-credit balance endpoint, so label this metric as spend rather than balance. Never put the Admin API Key in Homepage YAML.
+
 This project also starts `localserver-homepage-xtcg-runtime-api`, an internal-only Node service that joins the existing `xtcg-engine_default` Docker network to read `xtcg-api` Runtime Status and expose sanitized card data to Homepage at `http://xtcg-runtime-api:8789/`. The XTCG API remains private and is not given a host port.
 
 ## Verify Production
@@ -90,6 +93,7 @@ ssh shito@192.168.1.29 docker inspect --format={{.HostConfig.RestartPolicy.Name}
 ssh shito@192.168.1.29 docker inspect --format={{.HostConfig.RestartPolicy.Name}} localserver-homepage-glances
 ssh shito@192.168.1.29 docker inspect --format={{.HostConfig.RestartPolicy.Name}} localserver-homepage-gpu-status-api
 ssh shito@192.168.1.29 docker inspect --format={{.HostConfig.RestartPolicy.Name}} localserver-homepage-deepseek-balance-api
+ssh shito@192.168.1.29 docker inspect --format={{.HostConfig.RestartPolicy.Name}} localserver-homepage-openai-cost-api
 ssh shito@192.168.1.29 docker inspect --format={{.HostConfig.RestartPolicy.Name}} localserver-homepage-xtcg-runtime-api
 ```
 
@@ -100,6 +104,7 @@ Expected state:
 - `localserver-homepage-glances`: `Up`, host network, serving on `http://192.168.1.29:61208/`
 - `localserver-homepage-gpu-status-api`: `Up`, internal-only, serving on Docker network port `8788`
 - `localserver-homepage-deepseek-balance-api`: `Up`, internal-only, serving on Docker network port `8787`
+- `localserver-homepage-openai-cost-api`: `Up`, internal-only, serving on Docker network port `8790`
 - `localserver-homepage-xtcg-runtime-api`: `Up`, internal-only, serving on Docker network port `8789`
 - restart policy for all containers: `unless-stopped`
 
@@ -130,6 +135,7 @@ ssh shito@192.168.1.29 curl --fail --silent --show-error --max-time 10 http://19
 ssh shito@192.168.1.29 curl --fail --silent --show-error --max-time 10 http://192.168.1.29:3000/api/docker/status/localserver-homepage-glances/local-docker
 ssh shito@192.168.1.29 curl --fail --silent --show-error --max-time 10 http://192.168.1.29:3000/api/docker/status/localserver-homepage-gpu-status-api/local-docker
 ssh shito@192.168.1.29 curl --fail --silent --show-error --max-time 10 http://192.168.1.29:3000/api/docker/status/localserver-homepage-deepseek-balance-api/local-docker
+ssh shito@192.168.1.29 curl --fail --silent --show-error --max-time 10 http://192.168.1.29:3000/api/docker/status/localserver-homepage-openai-cost-api/local-docker
 ssh shito@192.168.1.29 curl --fail --silent --show-error --max-time 10 http://192.168.1.29:3000/api/docker/status/xtcg-web/local-docker
 ssh shito@192.168.1.29 curl --fail --silent --show-error --max-time 10 http://192.168.1.29:3000/api/docker/status/xtcg-api/local-docker
 ssh shito@192.168.1.29 curl --fail --silent --show-error --max-time 10 http://192.168.1.29:3000/api/docker/status/xtcg-worker/local-docker
@@ -143,6 +149,7 @@ Expected status examples:
 - `{"status":"running"}` or `{"status":"running","health":"..."}` for `localserver-homepage-glances`
 - `{"status":"running"}` for `localserver-homepage-gpu-status-api`
 - `{"status":"running"}` for `localserver-homepage-deepseek-balance-api`
+- `{"status":"running"}` for `localserver-homepage-openai-cost-api`
 - `{"status":"running","health":"healthy"}` for `xtcg-web`
 - `{"status":"running","health":"healthy"}` for `xtcg-api`
 - `{"status":"running","health":"healthy"}` for `xtcg-worker`
@@ -153,6 +160,12 @@ Verify DeepSeek balance API from inside the Homepage Docker network without prin
 
 ```bash
 ssh shito@192.168.1.29 docker exec localserver-homepage node -e "fetch('http://deepseek-balance-api:8787/balance').then(async r => { const j = await r.json(); console.log(r.status, j.service, j.currency, j.is_available); })"
+```
+
+Verify OpenAI month-to-date costs from inside the Homepage Docker network without printing secrets:
+
+```bash
+ssh shito@192.168.1.29 docker exec localserver-homepage node -e "fetch('http://openai-cost-api:8790/costs').then(async r => { const j = await r.json(); console.log(r.status, j.service, j.currency, j.period, j.is_available); })"
 ```
 
 Verify XTCG Runtime data from inside the Homepage Docker network:

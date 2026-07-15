@@ -11,6 +11,7 @@ This project uses [Homepage](https://gethomepage.dev/) with Docker Compose. The 
 - `localserver-homepage-glances`: Glances host metrics API on `http://192.168.1.29:61208/`, used by Homepage for CPU, memory, disk, and network widgets
 - `localserver-homepage-gpu-status-api`: internal-only GPU status API backed by `nvidia-smi`
 - `localserver-homepage-deepseek-balance-api`: internal-only proxy for DeepSeek API balance shown in Homepage
+- `localserver-homepage-openai-cost-api`: internal-only proxy for OpenAI month-to-date organization costs shown in Homepage
 - `localserver-homepage-xtcg-runtime-api`: internal-only summary of XTCG worker, queue, active jobs, and batch progress
 
 Web service links follow the route used to open Homepage: a dashboard opened through the LAN IP links to LAN service URLs, while a dashboard opened through a Tailscale IP or MagicDNS name links to that same Tailscale host. Monitoring URLs remain internal and fixed.
@@ -19,6 +20,7 @@ Glances uses host networking and a read-only `/sys` mount so it can read host ne
 GPU status uses a small internal Node service with NVIDIA GPU access; it is not exposed on a host port.
 The root disk widget uses Glances' `/etc/hosts` filesystem entry, which maps to the host `/dev/sdb2` root filesystem without mounting the whole host root into the container.
 DeepSeek balance uses the server-side `DEEPSEEK_API_KEY` in `app.env`; do not put this key directly in Homepage YAML config.
+OpenAI does not expose a supported prepaid-credit balance endpoint. The OpenAI card therefore shows month-to-date organization costs from the supported Costs API and uses the server-side `OPENAI_ADMIN_KEY` in `app.env`. A regular project API key cannot access this endpoint.
 XTCG Runtime uses the private `xtcg-api` container through the existing `xtcg-engine_default` Docker network. The summary API exposes only card-ready runtime state and no host port.
 
 The initial dashboard tracks these existing containers:
@@ -33,6 +35,7 @@ The initial dashboard tracks these existing containers:
 - `localserver-homepage-glances`
 - `localserver-homepage-gpu-status-api`
 - `localserver-homepage-deepseek-balance-api`
+- `localserver-homepage-openai-cost-api`
 - `localserver-homepage-xtcg-runtime-api`
 
 XTCG services are tracked as Docker containers. The old `xtcg-backend.service` and `xtcg-training-worker.service` systemd units are expected to be inactive after Docker migration.
@@ -98,4 +101,10 @@ The home server currently advertises itself on Tailscale as `shito-diginnos-pc` 
 
 ```dotenv
 DEEPSEEK_API_KEY=your-deepseek-api-key
+```
+
+`OPENAI_ADMIN_KEY` is required only for the internal OpenAI costs API. Create an organization Admin API Key at <https://platform.openai.com/settings/organization/admin-keys>:
+
+```dotenv
+OPENAI_ADMIN_KEY=your-openai-admin-api-key
 ```

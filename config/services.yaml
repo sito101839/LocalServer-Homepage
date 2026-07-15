@@ -64,6 +64,7 @@
 - API Balances:
     - DeepSeek:
         icon: mdi-wallet-outline
+        href: https://platform.deepseek.com/usage
         description: API credit
         widget:
           type: customapi
@@ -87,6 +88,28 @@
                   to: Available
                 - value: false
                   to: Unavailable
+
+    - OpenAI:
+        icon: si-openai
+        href: https://platform.openai.com/home
+        description: Month-to-date API spend
+        widget:
+          type: customapi
+          url: http://openai-cost-api:8790/costs
+          refreshInterval: 600000
+          display: list
+          mappings:
+            - field: month_spend
+              label: Spend
+              format: float
+              prefix: "$"
+              additionalField:
+                field: currency
+                color: theme
+                format: text
+            - field: period
+              label: Period
+              format: text
 
 - Web Services:
     - XTCG Web:
