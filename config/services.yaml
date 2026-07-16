@@ -128,6 +128,14 @@
         server: local-docker
         container: rpchat-deepseek
 
+    - PersonalAI:
+        icon: mdi-brain
+        href: http://192.168.1.29:8002/
+        description: AI assistant on :8002
+        siteMonitor: http://192.168.1.29:8002/
+        server: local-docker
+        container: personal-ai
+
 - Background Processes:
     - XTCG Backend API:
         icon: mdi-api
