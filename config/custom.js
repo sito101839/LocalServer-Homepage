@@ -7,6 +7,7 @@
     "shito-diginnos-pc",
     "shito-diginnos-pc.tail81aab6.ts.net",
   ]);
+  const lanServiceHosts = new Set(["192.168.1.29"]);
   const serviceRouteHosts = new Map([
     ["homepage.tail81aab6.ts.net", "shito-diginnos-pc.tail81aab6.ts.net"],
   ]);
@@ -25,7 +26,7 @@
 
     document.querySelectorAll("a[href]").forEach((link) => {
       const destination = new URL(link.href);
-      if (destination.protocol !== "http:" || !dashboardHosts.has(destination.hostname)) {
+      if (destination.protocol !== "http:" || !lanServiceHosts.has(destination.hostname)) {
         return;
       }
 
