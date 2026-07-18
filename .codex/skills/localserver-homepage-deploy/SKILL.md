@@ -22,6 +22,7 @@ Before touching the server, also obey the global `home-server-ssh` rules if avai
 - Internal XTCG Runtime API: `xtcg-runtime-api/server.js`
 - Homepage config: `config/*.yaml`
 - Browser-side route-aware service links: `config/custom.js`
+- Explicit Tailscale HTTPS setup: `scripts/enable-tailscale-https.sh`
 - Local verification script: `scripts/verify.sh`
 - Deploy script: `scripts/deploy.sh`
 
@@ -67,6 +68,8 @@ REMOTE_HOST=shito@192.168.1.29 REMOTE_DIR=/srv/localserver-homepage REMOTE_URL=h
 ```
 
 The deploy script creates `/srv/localserver-homepage` with `sudo` on first deploy, changes ownership to `shito:shito`, backs up current config into `backups/`, syncs `compose.yml` and `config/`, creates missing env files from samples, pulls images, runs `docker compose up -d`, and checks the HTTP endpoint.
+
+Homepage is exposed on the LAN at `http://192.168.1.29:3000/`. Enable the tailnet-only HTTPS endpoint explicitly with `bash scripts/enable-tailscale-https.sh`. It configures `svc:homepage` to proxy `https://homepage.tail81aab6.ts.net/` to `http://192.168.1.29:3000` without modifying the existing PersonalAI Serve route. Tailscale admin approval may be required before the new service receives traffic.
 
 This project also starts `localserver-homepage-glances` for host CPU, memory, disk, uptime, and network metrics. It uses host networking plus a read-only `/sys` mount for host interface visibility; only add broader container privileges after explicit user approval.
 

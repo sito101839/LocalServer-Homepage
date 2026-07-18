@@ -6,7 +6,7 @@ This project uses [Homepage](https://gethomepage.dev/) with Docker Compose. The 
 
 ## What This Starts
 
-- `localserver-homepage`: Homepage UI on `http://192.168.1.29:3000/` and Tailscale hosts such as `http://shito-diginnos-pc.tail81aab6.ts.net:3000/`
+- `localserver-homepage`: Homepage UI on `http://192.168.1.29:3000/` and the Tailscale HTTPS service `https://homepage.tail81aab6.ts.net/`
 - `localserver-homepage-dockerproxy`: read-only Docker socket proxy used by Homepage for container status
 - `localserver-homepage-glances`: Glances host metrics API on `http://192.168.1.29:61208/`, used by Homepage for CPU, memory, disk, and network widgets
 - `localserver-homepage-gpu-status-api`: internal-only GPU status API backed by `nvidia-smi`
@@ -14,7 +14,7 @@ This project uses [Homepage](https://gethomepage.dev/) with Docker Compose. The 
 - `localserver-homepage-openai-cost-api`: internal-only proxy for OpenAI month-to-date organization costs shown in Homepage
 - `localserver-homepage-xtcg-runtime-api`: internal-only summary of XTCG worker, queue, active jobs, and batch progress
 
-Web service links follow the route used to open Homepage: a dashboard opened through the LAN IP links to LAN service URLs, while a dashboard opened through a Tailscale IP or MagicDNS name links to that same Tailscale host. Monitoring URLs remain internal and fixed.
+Web service links follow the route used to open Homepage: a dashboard opened through the LAN IP links to LAN service URLs, while one opened through the Homepage Tailscale Service links to the server's MagicDNS host. Monitoring URLs remain internal and fixed.
 
 Glances uses host networking and a read-only `/sys` mount so it can read host network-interface statistics where supported.
 GPU status uses a small internal Node service with NVIDIA GPU access; it is not exposed on a host port.
@@ -70,6 +70,17 @@ Run:
 bash scripts/deploy.sh
 ```
 
+Enable Homepage's dedicated, tailnet-only HTTPS endpoint after the first deploy:
+
+```bash
+bash scripts/enable-tailscale-https.sh
+```
+
+This creates `svc:homepage` as a Tailscale Service that proxies
+`https://homepage.tail81aab6.ts.net/` to `192.168.1.29:3000`. The Tailnet admin may
+need to approve the service before it can receive traffic. The existing PersonalAI
+Serve endpoint remains separate and is not modified.
+
 Project-specific Codex deployment guidance lives in `.codex/skills/localserver-homepage-deploy/SKILL.md`.
 
 Optional overrides:
@@ -92,7 +103,7 @@ Do not commit real `compose.env` or `app.env` files. Edit the server-side files 
 `HOMEPAGE_ALLOWED_HOSTS` must include the exact host and port used in the browser, for example:
 
 ```dotenv
-HOMEPAGE_ALLOWED_HOSTS=192.168.1.29:3000,localhost:3000,127.0.0.1:3000,100.76.107.23:3000,shito-diginnos-pc:3000,shito-diginnos-pc.tail81aab6.ts.net:3000,desktop-n4jnor6:3000,desktop-n4jnor6.tail81aab6.ts.net:3000
+HOMEPAGE_ALLOWED_HOSTS=192.168.1.29:3000,localhost:3000,127.0.0.1:3000,100.76.107.23:3000,shito-diginnos-pc:3000,shito-diginnos-pc.tail81aab6.ts.net:3000,desktop-n4jnor6:3000,desktop-n4jnor6.tail81aab6.ts.net:3000,homepage.tail81aab6.ts.net
 ```
 
 The home server currently advertises itself on Tailscale as `shito-diginnos-pc` with IP `100.76.107.23`. `desktop-n4jnor6` is also allowed because it may appear in browser Host headers when accessing through the desktop-side Tailscale path.

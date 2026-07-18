@@ -7,11 +7,16 @@
     "shito-diginnos-pc",
     "shito-diginnos-pc.tail81aab6.ts.net",
   ]);
+  const serviceRouteHosts = new Map([
+    ["homepage.tail81aab6.ts.net", "shito-diginnos-pc.tail81aab6.ts.net"],
+  ]);
+  const homepageServiceUrl = "https://homepage.tail81aab6.ts.net/";
 
   // Keep browser-facing links on the same LAN or Tailscale route as Homepage.
   function rewriteServiceLinks() {
     const currentHost = window.location.hostname;
-    if (!dashboardHosts.has(currentHost)) {
+    const linkHost = serviceRouteHosts.get(currentHost) || currentHost;
+    if (!dashboardHosts.has(currentHost) && !serviceRouteHosts.has(currentHost)) {
       return;
     }
 
@@ -21,7 +26,12 @@
         return;
       }
 
-      destination.hostname = currentHost;
+      if (serviceRouteHosts.has(currentHost) && destination.port === "3000") {
+        link.href = homepageServiceUrl;
+        return;
+      }
+
+      destination.hostname = linkHost;
       link.href = destination.toString();
     });
   }
