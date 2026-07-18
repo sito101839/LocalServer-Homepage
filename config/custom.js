@@ -10,6 +10,9 @@
   const serviceRouteHosts = new Map([
     ["homepage.tail81aab6.ts.net", "shito-diginnos-pc.tail81aab6.ts.net"],
   ]);
+  const serviceRouteUrls = new Map([
+    ["http://192.168.1.29/", "http://100.76.107.23/"],
+  ]);
   const homepageServiceUrl = "https://homepage.tail81aab6.ts.net/";
 
   // Keep browser-facing links on the same LAN or Tailscale route as Homepage.
@@ -28,6 +31,12 @@
 
       if (serviceRouteHosts.has(currentHost) && destination.port === "3000") {
         link.href = homepageServiceUrl;
+        return;
+      }
+
+      const serviceRouteUrl = serviceRouteUrls.get(destination.toString());
+      if (serviceRouteHosts.has(currentHost) && serviceRouteUrl) {
+        link.href = serviceRouteUrl;
         return;
       }
 
