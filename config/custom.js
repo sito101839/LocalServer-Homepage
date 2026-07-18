@@ -13,6 +13,7 @@
   ]);
   const serviceRouteUrls = new Map([
     ["http://192.168.1.29/", "http://100.76.107.23/"],
+    ["http://192.168.1.29:8002/", "https://shito-diginnos-pc.tail81aab6.ts.net/"],
   ]);
   const homepageServiceUrl = "https://homepage.tail81aab6.ts.net/";
 
