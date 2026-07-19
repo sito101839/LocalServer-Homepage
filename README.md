@@ -14,7 +14,9 @@ This project uses [Homepage](https://gethomepage.dev/) with Docker Compose. The 
 - `localserver-homepage-openai-cost-api`: internal-only proxy for OpenAI month-to-date organization costs shown in Homepage
 - `localserver-homepage-xtcg-runtime-api`: internal-only summary of XTCG worker, queue, active jobs, and batch progress
 
-Web service links follow the route used to open Homepage: a dashboard opened through the LAN IP links to LAN service URLs, while one opened through the Homepage Tailscale Service links to the server's MagicDNS host. Monitoring URLs remain internal and fixed.
+Web service links follow the route used to open Homepage: a dashboard opened through the LAN IP links to LAN service URLs, while one opened through the Homepage Tailscale Service links to each application's dedicated Tailscale HTTPS URL when available. Monitoring URLs remain internal and fixed.
+
+Each browser-facing application owns its own Tailscale Service in its own repository. This Homepage project only consumes URLs that the owning project has deployed and verified; it does not create or modify XTCG Web, RPchat, or PersonalAI publishing configuration. The physical server MagicDNS name is reserved as a node identity rather than the preferred identity for an application. Existing physical-host and port-based links remain compatibility routes until each owning project migrates them.
 
 Glances uses host networking and a read-only `/sys` mount so it can read host network-interface statistics where supported.
 GPU status uses a small internal Node service with NVIDIA GPU access; it is not exposed on a host port.
@@ -78,8 +80,8 @@ bash scripts/enable-tailscale-https.sh
 
 This creates `svc:homepage` as a Tailscale Service that proxies
 `https://homepage.tail81aab6.ts.net/` to `192.168.1.29:3000`. The Tailnet admin may
-need to approve the service before it can receive traffic. The existing PersonalAI
-Serve endpoint remains separate and is not modified.
+need to approve the service before it can receive traffic. Other applications must
+be migrated by their owning repositories before Homepage adopts their dedicated URLs.
 
 Project-specific Codex deployment guidance lives in `.codex/skills/localserver-homepage-deploy/SKILL.md`.
 

@@ -7,7 +7,7 @@ description: Deploy, verify, update, or troubleshoot this repository's Homepage 
 
 ## Overview
 
-Use this skill for project-specific deployment and verification of the gethomepage.dev dashboard in this repository. The production service lives on the home server at `/srv/localserver-homepage` and is accessed at `http://192.168.1.29:3000/` or Tailscale URLs such as `http://shito-diginnos-pc.tail81aab6.ts.net:3000/`.
+Use this skill for project-specific deployment and verification of the gethomepage.dev dashboard in this repository. The production service lives on the home server at `/srv/localserver-homepage` and is accessed at `http://192.168.1.29:3000/` on the LAN or `https://homepage.tail81aab6.ts.net/` through Tailscale.
 
 Before touching the server, also obey the global `home-server-ssh` rules if available, especially the Docker Compose service standard and safety notes.
 
@@ -59,7 +59,7 @@ Default deploy target:
 - SSH host: `shito@192.168.1.29`
 - Remote directory: `/srv/localserver-homepage`
 - Remote URL: `http://192.168.1.29:3000/`
-- Tailscale URL: `http://shito-diginnos-pc.tail81aab6.ts.net:3000/`
+- Tailscale URL: `https://homepage.tail81aab6.ts.net/`
 
 Optional overrides:
 
@@ -69,7 +69,16 @@ REMOTE_HOST=shito@192.168.1.29 REMOTE_DIR=/srv/localserver-homepage REMOTE_URL=h
 
 The deploy script creates `/srv/localserver-homepage` with `sudo` on first deploy, changes ownership to `shito:shito`, backs up current config into `backups/`, syncs `compose.yml` and `config/`, creates missing env files from samples, pulls images, runs `docker compose up -d`, and checks the HTTP endpoint.
 
-Homepage is exposed on the LAN at `http://192.168.1.29:3000/`. Enable the tailnet-only HTTPS endpoint explicitly with `bash scripts/enable-tailscale-https.sh`. It configures `svc:homepage` to proxy `https://homepage.tail81aab6.ts.net/` to `http://192.168.1.29:3000` without modifying the existing PersonalAI Serve route. Tailscale admin approval may be required before the new service receives traffic.
+Homepage is exposed on the LAN at `http://192.168.1.29:3000/`. Enable the tailnet-only HTTPS endpoint explicitly with `bash scripts/enable-tailscale-https.sh`. It configures `svc:homepage` to proxy `https://homepage.tail81aab6.ts.net/` to `http://192.168.1.29:3000`. Tailscale admin approval may be required before the new service receives traffic.
+
+## Web Service URL Ownership
+
+- Treat each browser-facing application as its own Tailscale Service with a stable `https://<service>.tail81aab6.ts.net/` URL.
+- Let the repository that owns an application own its Tailscale Service definition, host advertisement, allowed-host/CORS changes, deployment, and verification.
+- Do not create, migrate, or alter another application's Tailscale Service from this Homepage repository. Record that work for the owning repository instead.
+- Add a Homepage card's Tailscale URL only after the owning repository has deployed and verified it. Keep the LAN URL as that service's LAN route.
+- Do not use the physical node URL `shito-diginnos-pc.tail81aab6.ts.net` as a new application identity. Existing uses are transitional until their owning repositories migrate them.
+- Keep browser-side link rewriting only as a compatibility bridge. Replace per-port or physical-host rewrites with dedicated service URLs as each owning repository completes its migration.
 
 This project also starts `localserver-homepage-glances` for host CPU, memory, disk, uptime, and network metrics. It uses host networking plus a read-only `/sys` mount for host interface visibility; only add broader container privileges after explicit user approval.
 
@@ -102,7 +111,7 @@ ssh shito@192.168.1.29 docker inspect --format={{.HostConfig.RestartPolicy.Name}
 
 Expected state:
 
-- `localserver-homepage`: `Up`, `healthy`, `0.0.0.0:3000->3000/tcp`
+- `localserver-homepage`: `Up`, `healthy`, `192.168.1.29:3000->3000/tcp`
 - `localserver-homepage-dockerproxy`: `Up`
 - `localserver-homepage-glances`: `Up`, host network, serving on `http://192.168.1.29:61208/`
 - `localserver-homepage-gpu-status-api`: `Up`, internal-only, serving on Docker network port `8788`
@@ -124,11 +133,12 @@ Verify GPU status from inside the Homepage Docker network:
 ssh shito@192.168.1.29 docker exec localserver-homepage node -e "fetch('http://gpu-status-api:8788/gpu').then(async r => { const j = await r.json(); console.log(r.status, j.name, j.utilization_gpu, j.memory_used, j.memory_total, j.temperature); })"
 ```
 
-Verify Tailscale access from the server without depending on external DNS:
+Verify the dedicated Tailscale HTTPS Service:
 
 ```bash
-ssh shito@192.168.1.29 curl --fail --silent --show-error --max-time 10 --resolve shito-diginnos-pc.tail81aab6.ts.net:3000:100.76.107.23 http://shito-diginnos-pc.tail81aab6.ts.net:3000/ >/dev/null
-ssh shito@192.168.1.29 curl --fail --silent --show-error --max-time 10 http://100.76.107.23:3000/ >/dev/null
+ssh shito@192.168.1.29 curl --fail --silent --show-error --max-time 15 https://homepage.tail81aab6.ts.net/ >/dev/null
+ssh shito@192.168.1.29 tailscale status --json | jq '.Self.CapMap."service-host"'
+ssh shito@192.168.1.29 sudo tailscale serve status --json
 ```
 
 Verify Docker integration with the path order `<container>/<server>`:
@@ -186,7 +196,7 @@ Check logs:
 ssh shito@192.168.1.29 docker compose --env-file /srv/localserver-homepage/compose.env -f /srv/localserver-homepage/compose.yml logs --tail=100
 ```
 
-If `HOMEPAGE_ALLOWED_HOSTS` errors appear, edit server-side `/srv/localserver-homepage/app.env` so it includes the exact browser host and port, then redeploy or restart. Current known allowed hosts should include `192.168.1.29:3000`, `100.76.107.23:3000`, `shito-diginnos-pc:3000`, `shito-diginnos-pc.tail81aab6.ts.net:3000`, `desktop-n4jnor6:3000`, and `desktop-n4jnor6.tail81aab6.ts.net:3000`.
+If `HOMEPAGE_ALLOWED_HOSTS` errors appear, edit server-side `/srv/localserver-homepage/app.env` so it includes the exact browser host and port, then redeploy or restart. Required production hosts are `192.168.1.29:3000` and `homepage.tail81aab6.ts.net`. Keep raw Tailscale IP, physical MagicDNS, or desktop-forwarded host entries only while their corresponding compatibility routes remain supported.
 
 If a Docker status API returns 500, first confirm the URL order is `/api/docker/status/<container>/<server>`. The inverse order can log `Cannot read properties of null (reading 'conn')`.
 
