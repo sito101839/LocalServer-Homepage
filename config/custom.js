@@ -12,7 +12,8 @@
     ["homepage.tail81aab6.ts.net", "shito-diginnos-pc.tail81aab6.ts.net"],
   ]);
   const serviceRouteUrls = new Map([
-    ["http://192.168.1.29/", "http://100.76.107.23/"],
+    ["http://192.168.1.29/", "https://xtcg.tail81aab6.ts.net/"],
+    ["http://192.168.1.29:8001/", "https://rpchat-deepseek.tail81aab6.ts.net/"],
     ["http://192.168.1.29:8002/", "https://personal-ai.tail81aab6.ts.net/"],
   ]);
   const homepageServiceUrl = "https://homepage.tail81aab6.ts.net/";
